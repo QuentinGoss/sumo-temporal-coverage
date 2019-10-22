@@ -11,12 +11,12 @@
 #
 import os
 import sys
-import optparse
 import core
 import time
 import config
 import env
 import pantherine as purr
+import cmdopts
 from core import *
 
 __IS_DEBUG_MODE = False # global flag used when calling debug()
@@ -32,33 +32,6 @@ try:
 except ImportError:  
   sys.exit("Could not locate sumolib in " + config.s_sumo_tools_dir + ".")
 import traci
-
-
-###############################
-# Uses optparse to add a --nogui option to run without using the gui.
-###############################
-def get_options():
-    opt_parser = optparse.OptionParser()
-    # GUI
-    opt_parser.add_option("--nogui",action="store_true",default=False, help="run the commandline version of sumo")
-    opt_parser.add_option("--debug",action="store_true",default=False, help="Adds additional print statements for debugging.")
-    #
-    opt_parser.add_option('--seed',type='int',dest='seed',default=8635839050,help='Random Seed')
-    opt_parser.add_option('--map-dir',type='string',dest='map_dir',default=None,help='Directory of SUMO map files')
-    #
-    options, args = opt_parser.parse_args()
-
-    # Validate Options
-    if options.map_dir == None:
-        print('Please specify a map directory with --map-dir')
-        sys.exit(1)
-
-    # Set our debug global so we only check once
-    global __IS_DEBUG_MODE
-    __IS_DEBUG_MODE = options.debug
-
-    return options
-# end get_options()
 
 
 ###############################
@@ -104,7 +77,7 @@ def run():
 def main():
   if __name__ == "__main__":
     debug("The main script is running.")
-    options = get_options()
+    options = cmdopts.get_options()
     env.options = options
     config.s_sumocfg_file = purr.mrf(env.options.map_dir,r'*.sumocfg')
     config.s_net_file = purr.mrf(env.options.map_dir,r'*.net.xml')

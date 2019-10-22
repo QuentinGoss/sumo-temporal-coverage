@@ -3,6 +3,7 @@ import vehicle
 import os
 import pantherine as purr
 import preprocess
+import target
 
 ###############################
 # Initilize anything that needs to happen at step 0 here.
@@ -11,28 +12,18 @@ def initialize(traci):
     os.system("cls")
     print("Initializing...")
     
-    print("Finding spawn edge candidates.")
-    try:
-        spawn_edge_ids = purr.load('temp/spawns.bin')
-    except FileNotFoundError:
-        spawn_edge_ids = preprocess.get_valid_edges_from_point(env.point_spawn,env.radius_spawn_sink)
-        purr.save('temp/spawns.bin',spawn_edge_ids)
-    preprocess.add_radius_polygon(traci,env.point_spawn,env.radius_spawn_sink,(0,255,0))
+    preprocess.initialize_nx()
+    preprocess.initialize_edges_for_spawns_and_sinks(traci)
+    target.initialize(traci)
     
-    print("Finding sink edge candidates.")
-    try:
-        sink_edge_ids = purr.load('temp/sinks.bin')
-    except FileNotFoundError:
-        sink_edge_ids = preprocess.get_valid_edges_from_point(env.point_sink,env.radius_spawn_sink)
-        purr.save('temp/sinks.bin',sink_edge_ids)
-    preprocess.add_radius_polygon(traci,env.point_sink,env.radius_spawn_sink,(255,0,0))
+    n = 0; total = env.veh_exists_max;
+    for i in range(0,env.veh_exists_max):
+        vehicle.add(traci)
+        n += 1; purr.update(n,total,msg="Adding first %d vehicles " % (env.veh_exists_max))
+        continue
     
-    purr.pause()
-    
-    # ~ for i in range(0,env.veh_exists_max):
-        # ~ vehicle.add(traci)
     print("Initialization complete!")
-    purr.pause()
+    # ~ purr.pause()
     return
 # end def intialize
 
@@ -43,7 +34,21 @@ def initialize(traci):
 # Return False to finalize the simulation
 ###############################
 def timestep(traci,n_step):
+    vids = traci.vehicle.getIDList()
     
+    # Check the position of each vehicle
+    for vid in vids:
+        if vehicle.is_veh_at_target(traci,vid):
+            vehicle.sample(vid,n_step)
+    
+    # Simulation is ending
+    if len(vids) == 0 and env.veh_id_counter >= env.veh_total:
+        print("\nSimulation complete. Finalizing...")
+        return False
+    # Create more vehicles if neccesary
+    elif len(vids) < env.veh_exists_max and env.veh_id_counter < env.veh_total:
+        print("\nAdding vehicle %d/%d." % (env.veh_id_counter+1,env.veh_total))
+        vehicle.add(traci)
     return True
 # end timestep
 
@@ -51,6 +56,12 @@ def timestep(traci,n_step):
 # Finalize the Simulation
 ###############################
 def finalize():
-    
+    if os.path.exists(env.out_dir):
+        purr.deldir(env.out_dir)
+    os.mkdir(env.out_dir)
+    vehicle.csv()
+    target.csv()
     return
 # End finalize
+
+1953893735

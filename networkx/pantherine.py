@@ -164,6 +164,7 @@ def filterdicts(lst,key,val,no_sort=False,invert=False):
     else:
         return lst[low:high+1]
 
+# <!> UNFINISHED <!>
 # Performs filterdicts on a list of similiar values
 # @param [dict] lst = list to be sorted
 # @param string key = key to be sorted by

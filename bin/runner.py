@@ -33,6 +33,17 @@ except ImportError:
   sys.exit("Could not locate sumolib in " + config.s_sumo_tools_dir + ".")
 import traci
 
+# ~ ###############################
+# ~ # Import nash algorithm
+# ~ ###############################
+# ~ try:
+    # ~ sys.path.append("%s/../nash" % (os.path.dirname(os.path.abspath(__file__))))
+    # ~ import systematicSim
+    # ~ print("Nash Algorith (systematicSim) imported sucessfully.")
+# ~ except ImportError:
+    # ~ sys.exit("Could not locate Nash Algoirthm (systematicSim) directiory.")
+# ~ purr.pause()
+
 
 ###############################
 # @param s_msg = message to be printed to console.

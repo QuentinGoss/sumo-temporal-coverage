@@ -23,6 +23,8 @@ def get_options():
     #
     opt_parser.add_option('-o','--out.dir',type='string',dest='out_dir',default='out',help='Output directory.')
     #
+    opt_parser.add_option('-m','--method',type='string',dest='method',default='baseline',help='Target selection algorithm.')
+    #
     options, args = opt_parser.parse_args()
 
     # Validate Options
@@ -38,6 +40,9 @@ def get_options():
     elif options.point_sink == None:
         print("Please specify a sink point with --point.spawn=x.xx,y.yy.")
         sys.exit(1)
+    elif not options.method.lower() in ['baseline','nash']:
+        print('Unknown method. Please specify a valid method with --method.')
+        sys.exit(1)
         
     # Set variables
     env.veh_total = options.veh_total
@@ -46,6 +51,14 @@ def get_options():
     env.point_sink = parse_point(options.point_sink)
     env.radius_spawn_sink = options.radius_spawn_sink
     env.out_dir = options.out_dir
+    options.method = options.method.lower()
+    env.method = options.method
+    
+    # Splash
+    if env.method == 'baseline':
+        splash_baseline()
+    elif env.method == 'nash':
+        splash_nash()
 
     return options
 
@@ -53,3 +66,27 @@ def get_options():
 def parse_point(point):
     point = point.strip('()').split(',')
     return (float(point[0]),float(point[1]))
+    
+def splash_baseline():
+    msg = """
+    ▄▄▄▄·  ▄▄▄· .▄▄ · ▄▄▄ .▄▄▌  ▪   ▐ ▄ ▄▄▄ .
+    ▐█ ▀█▪▐█ ▀█ ▐█ ▀. ▀▄.▀·██•  ██ •█▌▐█▀▄.▀·
+    ▐█▀▀█▄▄█▀▀█ ▄▀▀▀█▄▐▀▀▪▄██▪  ▐█·▐█▐▐▌▐▀▀▪▄
+    ██▄▪▐█▐█ ▪▐▌▐█▄▪▐█▐█▄▄▌▐█▌▐▌▐█▌██▐█▌▐█▄▄▌
+    ·▀▀▀▀  ▀  ▀  ▀▀▀▀  ▀▀▀ .▀▀▀ ▀▀▀▀▀ █▪ ▀▀▀ 
+    """
+    print(msg)
+    return
+
+def splash_nash():
+    msg = """
+     ▐ ▄  ▄▄▄· .▄▄ ·  ▄ .▄
+    •█▌▐█▐█ ▀█ ▐█ ▀. ██▪▐█
+    ▐█▐▐▌▄█▀▀█ ▄▀▀▀█▄██▀▐█
+    ██▐█▌▐█ ▪▐▌▐█▄▪▐███▌▐▀
+    ▀▀ █▪ ▀  ▀  ▀▀▀▀ ▀▀▀ ·
+    """
+    print(msg)
+    return
+
+

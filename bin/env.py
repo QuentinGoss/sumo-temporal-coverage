@@ -6,6 +6,9 @@ veh_total = None      # Number of vehicles to simulate
 veh_exists_max = None # Number of vehicles that may exist at any point in time.
 veh_id_counter = 0
 vehicles = [] # List of tracked vehicles
+vids_active = []# List of active vehicle IDs
+vehicles_active = [] # List of active vehicle dictionaries
+vehicles_dest = [] # Vehicle Destination nodes ordered by vid [Node0,Node1,...,NodeN]
 
 # Routes
 route_id_counter = 0
@@ -30,5 +33,19 @@ targets = [] # List of targets
 
 # output directory
 out_dir = None
+
+# Target Selection method
+method = None
+
+# NASH
+dist = None              # Distance object
+recalculate_nash = False # Find nash equilibrium again?
+nash_assigner = None     # Nash ASsigner Instance
+
+# traci object
+traci = None
+
+# Function Statistics
+fs_dijkstra = {'calls':0,'time':0}
 
 

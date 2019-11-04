@@ -3,6 +3,7 @@
 # Performs common network x operations
 import networkx as nx
 import pantherine as purr
+import env
 
 # Determines path weight and the edge ids of the edges along the path
 # @param nx.*Graph g = networkx graph
@@ -31,7 +32,7 @@ def path_info(g,path):
 # @param [dict] target_nodes = SUMO node dictionaries of target nodes
 # @param dict best_path = The optimal path.
 def naive_target_selection(g,shortest_path,target_nodes):
-    best_path = {'weight':None,'path_eids':None,'target_node':None,'path_nids':None}
+    best_path = new_path()
     for target_node in target_nodes:
         # Determine target path weight
         seg1 = nx.dijkstra_path(g,shortest_path[0],target_node['id'])
@@ -47,3 +48,14 @@ def naive_target_selection(g,shortest_path,target_nodes):
             best_path['path_nids'] = seg1
         continue
     return best_path
+
+# A new path dictionary
+def new_path():
+    return {'weight':None,'path_eids':None,'target_node':None,'path_nids':None}
+
+def dijkstra(g,node_from,node_to):
+    st = purr.now()
+    path = nx.dijkstra_path(g,node_from,node_to)
+    env.fs_dijkstra['calls'] += 1
+    env.fs_dijkstra['time'] += purr.elapsed(st)
+    return path

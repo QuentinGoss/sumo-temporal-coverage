@@ -4,6 +4,9 @@ import os
 import pantherine as purr
 import preprocess
 import target
+from distance import distance
+import nxops
+import nash
 
 ###############################
 # Initilize anything that needs to happen at step 0 here.
@@ -22,8 +25,10 @@ def initialize(traci):
         n += 1; purr.update(n,total,msg="Adding first %d vehicles " % (env.veh_exists_max))
         continue
     
+    if env.method == 'nash':
+        env.dist = distance()
+    
     print("Initialization complete!")
-    # ~ purr.pause()
     return
 # end def intialize
 
@@ -34,19 +39,26 @@ def initialize(traci):
 # Return False to finalize the simulation
 ###############################
 def timestep(traci,n_step):
-    vids = traci.vehicle.getIDList()
+    env.traci = traci
+    env.vids_active = traci.vehicle.getIDList()
     
-    # Check the position of each vehicle
-    for vid in vids:
-        if vehicle.is_veh_at_target(traci,vid):
-            vehicle.sample(vid,n_step)
+    if env.method == 'baseline':
+        # Check the position of each vehicle
+        for vid in env.vids_active:
+            if vehicle.is_veh_at_target(traci,vid):
+                vehicle.sample(vid,n_step)
+                
+    elif env.method == 'nash':
+        if env.recalculate_nash:
+            nash.recalculate()
+            
     
     # Simulation is ending
-    if len(vids) == 0 and env.veh_id_counter >= env.veh_total:
+    if len(env.vids_active) == 0 and env.veh_id_counter >= env.veh_total:
         print("\nSimulation complete. Finalizing...")
         return False
     # Create more vehicles if neccesary
-    elif len(vids) < env.veh_exists_max and env.veh_id_counter < env.veh_total:
+    elif len(env.vids_active) < env.veh_exists_max and env.veh_id_counter < env.veh_total:
         print("\nAdding vehicle %d/%d." % (env.veh_id_counter+1,env.veh_total))
         vehicle.add(traci)
     return True
@@ -56,12 +68,11 @@ def timestep(traci,n_step):
 # Finalize the Simulation
 ###############################
 def finalize():
-    if os.path.exists(env.out_dir):
-        purr.deldir(env.out_dir)
-    os.mkdir(env.out_dir)
-    vehicle.csv()
-    target.csv()
+    if env.method == 'baseline':
+        if os.path.exists(env.out_dir):
+            purr.deldir(env.out_dir)
+        os.mkdir(env.out_dir)
+        vehicle.csv()
+        target.csv()
     return
 # End finalize
-
-1953893735

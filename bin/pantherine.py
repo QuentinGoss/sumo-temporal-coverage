@@ -10,6 +10,7 @@ import glob      # mrf
 import json      # save
 import xml.etree.ElementTree as ET # readXML
 from bisect import bisect_left     # binsearch
+import datetime
 
 # Converts a string of characters into a unique number
 # @param string s = string of ASCII values
@@ -164,6 +165,7 @@ def filterdicts(lst,key,val,no_sort=False,invert=False):
     else:
         return lst[low:high+1]
 
+# <!> UNFINISHED <!>
 # Performs filterdicts on a list of similiar values
 # @param [dict] lst = list to be sorted
 # @param string key = key to be sorted by
@@ -452,3 +454,14 @@ def flattenlist(lst,rm_none=True):
                 flat_list.append(item)
         continue
     return flat_list
+
+# Gets the current time
+# @return The current time as a datetime object
+def now():
+    return datetime.datetime.now()
+
+# Gets the elapsed time
+# @param datetime _time = The point that is being measured from
+# @return float = Time elapsed between now and _time in seconds.
+def elapsed(_time):
+    return (datetime.datetime.now() - _time).total_seconds()

@@ -25,6 +25,10 @@ def main():
         # Each each is a connection
         n = 0; total = len(edges)
         for edge in edges:
+            if edge['from'] == edge['to']:
+                n += 1
+                continue
+                
             # Edges with shape
             try:
                 length = length_from_shape(edge['shape'])

@@ -40,8 +40,6 @@ def initialize(traci):
             'sampling times':[],
             'sampling vids':[]
         }
-        # ~ for i in range(0,env.veh_total):
-            # ~ target['sampling times'].append(None)
         env.targets.append(target)
         continue
     

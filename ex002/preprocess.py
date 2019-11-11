@@ -104,14 +104,3 @@ def initialize_nx():
     print("Complete!")
     return
 
-# Load the shortest path weight matrix
-def initialize_shortest_path_weights():
-    _file = purr.mrf(env.options.map_dir,r'*.weight.pybin')
-    env.shortest_path_weights = purr.load(_file)
-    nodes = []   
-    for i,nid in enumerate(list(env.nx.nodes)):
-        nodes.append({"id":nid,"spw index":i,"sort id":purr.ascii2int(nid)})
-    env.nid2spwid = purr.sortdicts(nodes,'sort id')
-    env.nid2spwid_sids = [item['sort id'] for item in env.nid2spwid]
-    return
-

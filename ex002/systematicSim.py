@@ -23,7 +23,7 @@ class distance:
 		sp = spd.pdist([self.vP[2*vehicle], self.vP[2*vehicle+1]])
 		c = d1+d2-sp#cost c
         
-		print(type(d1),type(d2),type(sp),type(c))
+		# ~ print(type(d1),type(d2),type(sp),type(c))
 		return c
 
 import env
@@ -169,10 +169,25 @@ def main():
 	print('final target allocation')
 	for x in range(nA.N):
 		print('vehicle,target,utililty: (%d,%.0f,%.3f)'%(x,cDest[x],utilities[x]))
-	
+
+def test():
+    N = 50
+    M = 25
+    vP = np.random.random((2*N,2))#sources and destinations
+    tP = np.random.random((M,2))# targets 
+    dist = distance(vP,tP)#initialize distance instance 
+    #R should be in the upper range of the diversion costs 
+
+    nA = nashAssigner(N=N,M=M,R=5,tau=1,dist=dist) #initialize nash equilibrium algorithm
+    
+    for i in range(100):
+        print(i)
+        t = nA.getAssignments()
+    
 	
 if __name__ == '__main__':
-	main()
+    test()
+	# ~ main()
 
 
 

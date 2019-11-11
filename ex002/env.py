@@ -5,10 +5,10 @@ options = None
 veh_total = None      # Number of vehicles to simulate
 veh_exists_max = None # Number of vehicles that may exist at any point in time.
 veh_id_counter = 0
-vehicles = [] # List of tracked vehicles
-vids_active = []# List of active vehicle IDs
-vehicles_active = [] # List of active vehicle dictionaries
-vehicles_dest = [] # Vehicle Destination nodes ordered by vid [Node0,Node1,...,NodeN]
+vehicles = []         # Tracked Vehicless
+vehicles_active = []  # List of active vehicle dictionaries
+vehicles_dest = []    # Vehicle Destination nodes ordered by vid [Node0,Node1,...,NodeN]
+update_vehicle_info = False # When True, update vehicle info
 
 # Routes
 route_id_counter = 0
@@ -26,9 +26,6 @@ nodes = None # Node dictionaries for every node in the map
 
 # Networkx graph
 nx = None
-nid2spwid = None # [nid,spw index]
-nid2spwid_sids = None # sort ids
-shortest_path_weights = None
 
 # targets
 target_nodes = None # [node0,node1,...,nodeN]
@@ -50,7 +47,8 @@ tau = None
 # traci object
 traci = None
 
-# Function Statistics
-fs_dijkstra = {'calls':0,'time':0}
+# Shortest Path Matrices
+spm_tar2dest = None
+spm_veh2tar = None
 
 

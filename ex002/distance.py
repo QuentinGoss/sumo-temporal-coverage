@@ -7,6 +7,7 @@ import nxops
 import networkx as nx
 import numpy as np
 import datetime as dtime
+import spm
 
 #define class for distance function 
 class distance: 
@@ -28,9 +29,9 @@ class distance:
         tar = env.target_nodes[itar]
         
         if source:          
-            weight = veh['weight remaining'] + nxops.lookup_weight(veh['current edge']['to'],tar['id'])  
+            weight = veh['weight remaining'] + spm.lookup(env.spm_veh2tar,tar['id'],veh['current edge']['to'])  
         else:
-            weight = nxops.lookup_weight(tar['id'],veh['destination node']['id'])
+            weight = spm.lookup(env.spm_tar2dest,tar['id'],veh['destination node']['id'])
             
         return np.array([weight])
 
@@ -39,14 +40,17 @@ class distance:
     # @param int target = index of target
     # @return float = cost of diversion
     def cost(self,vehicle,target):
-        # veh->target
-        veh2tar = self.travelTime(vehicle=vehicle,target=target,source=True)
+        try:
+            # veh->target
+            veh2tar = self.travelTime(vehicle=vehicle,target=target,source=True)
 
-        # target->dest
-        tar2dest = self.travelTime(vehicle=vehicle,target=target,source=False)
+            # target->dest
+            tar2dest = self.travelTime(vehicle=vehicle,target=target,source=False)
 
-        # veh->dest (Shortest Path)
-        veh2dest = self.travelTimeVeh2Dest(vehicle)
+            # veh->dest (Shortest Path)
+            veh2dest = self.travelTimeVeh2Dest(vehicle)
+        except nx.NetworkXNoPath:
+            return np.array([np.inf])
 
         # The cost is (veh->target + target->source) - veh->source 
         cost = veh2tar + tar2dest - veh2dest
@@ -57,12 +61,5 @@ class distance:
     # @param int iveh = vehicle index
     # @return float = Distance from Veh to Destination
     def travelTimeVeh2Dest(self,iveh):
-        try:
-            veh = env.vehicles_active[iveh]
-        except IndexError:
-            print('distance.py::88 Catching Index Error: iveh=',iveh)
-            veh = env.vehicles_active[len(env.vehicles_active)-1]
-        
-        weight = veh['weight remaining'] + nxops.lookup_weight(veh['current edge']['to'],veh['destination node']['id'])
-        
-        return np.array(weight)
+        veh = env.vehicles_active[iveh]
+        return np.array(veh['veh2dest weight'])

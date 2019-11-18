@@ -44,11 +44,17 @@ nash_assigner = None     # Nash ASsigner Instance
 R = None
 tau = None
 
+# Baseline
+baseline_assign = False
+
 # traci object
 traci = None
 
 # Shortest Path Matrices
 spm_tar2dest = None
 spm_veh2tar = None
+
+# First update
+first_update = True
 
 

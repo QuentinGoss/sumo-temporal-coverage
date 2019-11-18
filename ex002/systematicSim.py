@@ -10,7 +10,7 @@ class distance:
 	vP = None 
 	tP = None
 	def __init__(self,vP,tP):
-		self.vP = vP
+		self.vP = vPs
 		self.tP = tP 
 	def travelTime(self,vehicle,target,source): #return the distance between ith source/destination and jth target. s indicates source or destination (assuming unit speed). Return the first half if source is True, and return the second half if source is False. 
 		if source:

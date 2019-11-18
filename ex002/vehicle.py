@@ -30,6 +30,7 @@ def add():
     # Add the destination node to list of sink nodes so it may be found later
     dest_node = purr.filterdicts(env.nodes,'id',veh['shortest path']['nids'][-1])[0]
     env.vehicles_dest.append(dest_node)
+    
     return
 
 # Inititalizes the shortests path of all vehicles
@@ -40,6 +41,9 @@ def initialize():
         veh = vehdict()
         veh['id'] = 'veh%d' % (i)
         veh['shortest path'] = random_shortest_path()
+        veh['source'] = veh['shortest path']['nids'][0]
+        veh['destination'] = veh['shortest path']['nids'][-1]
+        veh['shortest path length'] = veh['shortest path']['weight']
         env.vehicles[i] = veh
         purr.update(i+1,total,"Initializing Vehicles ")
     print()
@@ -124,16 +128,100 @@ def update():
                 break
             continue
             
-        # How much weight is left for the shortest path?
-        veh['short path weight'] = veh['weight remaining'] + nxops.path_info(env.nx,nx.dijkstra_path(env.nx,veh['current edge']['to'],veh['destination node']['id']))[0]
+        # What is the weight of Veh --> Dest
+        veh['veh2dest weight'] = veh['weight remaining'] + nxops.path_info(env.nx,nx.dijkstra_path(env.nx,veh['current edge']['to'],veh['destination node']['id']))[0]
 
         env.vehicles_active.append(veh)
+        
+        env.recalculate_nash = True
         continue
     return
 
 def vehdict():
     veh = {
-        'id':None,
+        'id':None,                   # Output
+        'source':None,               # Output
+        'destination':None,          # Output
+        'shortest path length':None, # Output
+        'diversion path length':None,# Output
+        'sample time':None,          # Output
+        'target nid':None,           # Output
+        'target eid':None,
         'shortest path':None
     }
     return veh
+
+# Checks if a vehicle has reached it's target
+# @param string vid = vehicle ID
+# @return True if vehicle is on it's target edge
+def is_veh_at_target(vid):
+    index = int(vid[3:])
+    if env.vehicles[index]['target eid'] == env.traci.vehicle.getRoadID(vid):
+        return True
+    return False
+
+# Take a sample
+# @param string vid = vehicle ID
+# @param int n_step = Current timestep
+def sample(vid,n_step):
+    index = int(vid[3:])
+    # Sample only once
+    if not env.vehicles[index]['sample time'] == None:
+        return
+    # Record time
+    env.vehicles[index]['sample time'] = n_step
+    # Track the sample time on the target too
+    tid = env.vehicles[index]['target nid']
+    for itar in range(0,len(env.targets)):
+        if env.targets[itar]['id'] == tid:
+            env.targets[itar]['sampling times'].append(n_step)
+            env.targets[itar]['sampling vids'].append(vid)
+            print("\n%s: Sample taken at %s!" % (vid,tid))
+            break
+    return
+    
+# Writes the result of simulation to csv
+def csv():
+    print("Writing vehicles.csv...",end='')
+    with open("%s/vehicles.csv" % (env.out_dir),'w') as f:
+        f.write("id,source,destination,shortest path length,diversion path length,sample time,target id\n")
+        for veh in env.vehicles:
+            f.write("%s,%s,%s,%.3f," % (veh['id'],veh['source'],veh['destination'],veh['shortest path length']))
+            if veh['diversion path length'] == None:
+                f.write(",")
+            else:
+                f.write("%.3f," % (veh['diversion path length']))
+            if veh['sample time'] == None:
+                f.write(",")
+            else:
+                f.write("%d," % (veh['sample time']))
+            if veh['target nid'] == None:
+                f.write("\n")
+            else:
+                f.write("%s\n" % (veh['target nid']))
+            continue
+    print("Complete!")
+    return
+
+# Pretty output
+def out_pretty():
+    print("Writing pretty vehicle output...",end='')
+    with open("%s/vehicles.pretty" % (env.out_dir),'w') as f:
+        f.write("%7s, %11s, %11s, %20s, %21s, %11s, %11s\n" % ("id","source", "destination", "shortest path length", "diversion path length", "sample time", "target id"))
+        for veh in env.vehicles:
+            f.write("%7s, %11s, %11s, %20.3f," % (veh['id'],veh['source'][:11],veh['destination'][:11],veh['shortest path length']))
+            if veh['diversion path length'] == None:
+                f.write(" %21s," % (''))
+            else:
+                f.write(" %21.3f," % (veh['diversion path length']))
+            if veh['sample time'] == None:
+                f.write(" %11s," % (''))
+            else:
+                f.write(" %11d," % (veh['sample time']))
+            if veh['target nid'] == None:
+                f.write("\n")
+            else:
+                f.write(" %11s\n" % (veh['target nid']))
+            continue
+    print("Complete!")
+    return

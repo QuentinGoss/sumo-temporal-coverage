@@ -92,7 +92,7 @@ def finalize():
     os.mkdir(env.out_dir)
     vehicle.csv()
     vehicle.out_pretty()
-    target.json()
+    target.csv()
     target.out_pretty()
     return
 # End finalize

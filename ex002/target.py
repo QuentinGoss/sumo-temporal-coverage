@@ -50,19 +50,9 @@ def initialize(traci):
 def csv():
     print("Writing targets.csv...",end='')
     with open("%s/targets.csv" % (env.out_dir),'w') as f:
-        f.write("id")
-        for i in range(0,env.veh_total):
-            f.write(",veh%d" % (i))
-        f.write("\n")
-        for target in env.targets:
-            f.write("%s" % target['id'])
-            for val in target["sampling times"]:
-                f.write(",")    
-                if not val == None:
-                    f.write("%d" % (val))
-                continue
-            f.write("\n")
-            continue
+        f.write('target,vehicle,time,dt\n')
+        for sample in env.samples:
+            f.write('%s,%s,%d,%0f\n' % (sample['target'],sample['vehicle'],sample['time'],sample['dt']))
     print("Complete!")
     return
 

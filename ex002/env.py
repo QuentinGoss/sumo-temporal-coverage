@@ -30,6 +30,7 @@ nx = None
 # targets
 target_nodes = None # [node0,node1,...,nodeN]
 targets = [] # List of targets
+samples = [] # List of samples for easy output
 
 # output directory
 out_dir = None

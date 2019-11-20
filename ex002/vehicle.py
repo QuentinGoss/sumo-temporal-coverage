@@ -7,6 +7,7 @@ import networkx as nx
 import nxops
 import pantherine as purr
 import preprocess
+import numpy as np
 
 # Adds a vehicle to the simulation
 # @param traci = traci object
@@ -145,6 +146,7 @@ def vehdict():
         'shortest path length':None, # Output
         'diversion path length':None,# Output
         'sample time':None,          # Output
+        'sample time diff':None,                  # Output
         'target nid':None,           # Output
         'target eid':None,
         'shortest path':None
@@ -174,8 +176,21 @@ def sample(vid,n_step):
     tid = env.vehicles[index]['target nid']
     for itar in range(0,len(env.targets)):
         if env.targets[itar]['id'] == tid:
+            # Time since last sample
+            if len(env.targets[itar]['sampling times']) == 0:
+                dt = np.inf
+            else:
+                dt = n_step - env.targets[itar]['sampling times'][-1]
+            env.vehicles[index]['sample time diff'] = dt
             env.targets[itar]['sampling times'].append(n_step)
             env.targets[itar]['sampling vids'].append(vid)
+            s = {
+                'target':env.targets[itar]['id'],
+                'vehicle':vid,
+                'time':n_step,
+                'dt':dt
+            }
+            env.samples.append(s)
             print("\n%s: Sample taken at %s!" % (vid,tid))
             break
     return
@@ -184,7 +199,7 @@ def sample(vid,n_step):
 def csv():
     print("Writing vehicles.csv...",end='')
     with open("%s/vehicles.csv" % (env.out_dir),'w') as f:
-        f.write("id,source,destination,shortest path length,diversion path length,sample time,target id\n")
+        f.write("id,source,destination,shortest.path.length,diversion.path.length,sample.time,sample.time.diff,target.id\n")
         for veh in env.vehicles:
             f.write("%s,%s,%s,%.3f," % (veh['id'],veh['source'],veh['destination'],veh['shortest path length']))
             if veh['diversion path length'] == None:
@@ -195,6 +210,10 @@ def csv():
                 f.write(",")
             else:
                 f.write("%d," % (veh['sample time']))
+            if veh['sample time diff'] == None:
+                f.write(',')
+            else:
+                f.write("%0f," % (veh['sample time diff']))
             if veh['target nid'] == None:
                 f.write("\n")
             else:
@@ -207,7 +226,7 @@ def csv():
 def out_pretty():
     print("Writing pretty vehicle output...",end='')
     with open("%s/vehicles.pretty" % (env.out_dir),'w') as f:
-        f.write("%7s, %11s, %11s, %20s, %21s, %11s, %11s\n" % ("id","source", "destination", "shortest path length", "diversion path length", "sample time", "target id"))
+        f.write("%7s, %11s, %11s, %20s, %21s, %11s, %16s, %11s\n" % ("id","source", "destination", "shortest path length", "diversion path length", "sample time","sample time diff", "target id"))
         for veh in env.vehicles:
             f.write("%7s, %11s, %11s, %20.3f," % (veh['id'],veh['source'][:11],veh['destination'][:11],veh['shortest path length']))
             if veh['diversion path length'] == None:
@@ -218,6 +237,12 @@ def out_pretty():
                 f.write(" %11s," % (''))
             else:
                 f.write(" %11d," % (veh['sample time']))
+            if veh['sample time diff'] == None:
+                f.write(" %16s" % (''))
+            elif veh['sample time diff'] == np.inf:
+                f.write(" %16s" % ("Inf"))
+            else:
+                f.write(" %16d" % (veh['sample time diff']))
             if veh['target nid'] == None:
                 f.write("\n")
             else:

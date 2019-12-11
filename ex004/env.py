@@ -49,7 +49,7 @@ method = None
 # NASH
 dist = None              # Distance object
 recalculate_nash = False # Find nash equilibrium again?
-nash_assigner = None     # Nash ASsigner Instance
+nash_assigners = None     # Nash ASsigner Instance
 R = None
 tau = None
 
@@ -62,6 +62,7 @@ traci = None
 # Shortest Path Matrices
 spm_tar2dest = None
 spm_veh2tar = None
+spm_complete = None
 
 # First update
 first_update = True

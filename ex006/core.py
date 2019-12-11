@@ -19,8 +19,9 @@ def initialize(traci):
     
     env.traci = traci
     preprocess.initialize_nx()
-    preprocess.initialize_edges_for_spawns_and_sinks(traci)
-    target.initialize(traci)
+    purr.pause()
+    # ~ preprocess.initialize_edges_for_spawns_and_sinks(traci)
+    # ~ target.initialize(traci)
     vehicle.initialize()
     spm.generate_tar2dest()
     env.dist = distance.distance()

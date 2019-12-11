@@ -20,10 +20,14 @@ def initialize(traci):
     env.traci = traci
     preprocess.initialize_nx()
     preprocess.initialize_edges_for_spawns_and_sinks(traci)
+    spm.load_complete_spm()
+    purr.pause()
+    
     target.initialize(traci)
     vehicle.initialize()
     spm.generate_tar2dest()
     env.dist = distance.distance()
+    nash.initialize()
     
     n = 0; total = env.veh_exists_max;
     for i in range(0,env.veh_exists_max):

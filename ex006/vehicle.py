@@ -8,6 +8,8 @@ import nxops
 import pantherine as purr
 import preprocess
 import numpy as np
+import polygon
+import sys
 
 # Adds a vehicle to the simulation
 # @param traci = traci object
@@ -34,45 +36,56 @@ def add():
     
     return
 
-# Inititalizes the shortests path of all vehicles
 def initialize():
     env.vehicles = [None for iveh in range(env.veh_total)]
-    total = len(env.vehicles)
-    for i, x in enumerate(env.vehicles):
+    for i, item in enumerate(env.vehicles):
         veh = vehdict()
         veh['id'] = 'veh%d' % (i)
-        veh['shortest path'] = random_shortest_path()
+        try:
+            veh['shortest path'] = shortest_path(i)
+            
+            # Starting points
+            xy = (float(env.vPs[i]['x']),float(env.vPs[i]['y']))
+            preprocess.add_radius_polygon(xy,50,(0,0,255),3)
+            preprocess.add_radius_polygon(xy,10,(0,255,255),4)
+            
+             # Ending points
+            xy = (float(env.vPd[i]['x']),float(env.vPd[i]['y']))
+            preprocess.add_radius_polygon(xy,50,(255,0,0),3)
+            preprocess.add_radius_polygon(xy,10,(255,255,0),4)        
+        except nx.NetworkXNoPath:
+            # Starting points
+            xy0 = (float(env.vPs[i]['x']),float(env.vPs[i]['y']))
+            preprocess.add_radius_polygon(xy0,50,(0,0,150),i+3)
+            preprocess.add_radius_polygon(xy0,10,(0,150,150),i+4)
+            
+             # Ending points
+            xy1 = (float(env.vPd[i]['x']),float(env.vPd[i]['y']))
+            preprocess.add_radius_polygon(xy1,50,(150,0,0),i+3)
+            preprocess.add_radius_polygon(xy1,10,(150,150,0),i+4)
+            
+            purr.save(env.status_file,False)
+            print("\nPoints improperly placed.")
+            sys.exit(0)
+            pass
         veh['source'] = veh['shortest path']['nids'][0]
         veh['destination'] = veh['shortest path']['nids'][-1]
         veh['shortest path length'] = veh['shortest path']['weight']
         env.vehicles[i] = veh
-        purr.update(i+1,total,"Initializing Vehicles ")
-    print()
+        purr.update(i+1,env.veh_total,"Initializing vehicles ")
+        continue
+
     return
 
-# Determines the spawn and sink node
-# @return A random but valid shortest path
-def random_shortest_path():
-    # Selected a path. It must be have a conenction between spawn and sink
-    ntrys = 0; shortest_path = {'weight':None,'nids':None,'eids':None}
-    while True:
-        # Pick a random spawn and sink edge
-        spawn_edge = random.choice(env.spawn_edge)
-        sink_edge = random.choice(env.sink_edge)
-        
-        # Determine the shortest path
-        try:
-            shortest_path['nids'] = nx.dijkstra_path(env.nx,spawn_edge['from'],sink_edge['to'])
-            break
-        except nx.NetworkXNoPath:
-            ntrys += 1
-            print("Cannont create a path between %s and %s... Trying again (%d)." % (spawn_edge['from'],sink_edge['to'],ntrys))
-        continue
-        
-    # At this point, it is assumed that the path is connected
-    # Now the weight of the path and the edge eids of the path is determined
+# Finds a shortest path between two nodes
+# @param int iveh = index of vehicle in vPs and vPd
+# @return shortest path
+def shortest_path(iveh):
+    src = env.vPs[iveh]
+    dst = env.vPd[iveh]
+    shortest_path = {'weight':None,'nids':None,'eids':None}
+    shortest_path['nids'] = nx.dijkstra_path(env.nx,src['id'],dst['id'])
     shortest_path['weight'], shortest_path['eids'] = nxops.path_info(env.nx,shortest_path['nids'])
-    
     return shortest_path
 
 # Updates vehicle position and situation
@@ -83,11 +96,12 @@ def update():
     env.vehicles_active = []
     
     # Refill 
-    for i,vid in enumerate(env.traci.vehicle.getIDList()):
+    total = len(env.vehicles)
+    for i,v in enumerate(env.vehicles):
         veh = dict()
             
         # Who am I?
-        veh['id'] = vid
+        veh['id'] = v['id']
         
         # Where am I?
         veh['route index'] = env.traci.vehicle.getRouteIndex(veh['id'])
@@ -98,12 +112,17 @@ def update():
         # What is my sink node?
         veh['destination node'] = env.vehicles_dest[int(veh['id'][3:])]
         
-        # How far along the edge am I (m)?
-        veh['position on edge (m)'] = env.traci.vehicle.getLanePosition(veh['id'])
+        if veh['route index'] < 0:
+            veh['route index'] = 0
+            veh['position on edge (m)'] = 0.000001
+            eid = env.traci.route.getEdges(veh['route id'])[0]
+        else:
         
-        # What edge am I on?
-        eid = env.traci.vehicle.getRoadID(veh['id'])
-        
+            # How far along the edge am I (m)?
+            veh['position on edge (m)'] = env.traci.vehicle.getLanePosition(veh['id'])
+            
+            # What edge am I on?
+            eid = env.traci.vehicle.getRoadID(veh['id'])
         
         # Obtain the edge object. Here we can have two cases:
         #  1. veh is at an intersection
@@ -134,8 +153,10 @@ def update():
 
         env.vehicles_active.append(veh)
         
-        env.recalculate_nash = True
+        purr.update(i+1,total,"Updating vehicle location data ")
+        # ~ env.recalculate_nash = True
         continue
+    print()
     return
 
 def vehdict():
@@ -178,7 +199,7 @@ def sample(vid,n_step):
         if env.targets[itar]['id'] == tid:
             # Time since last sample
             if len(env.targets[itar]['sampling times']) == 0:
-                dt = np.inf
+                dt = n_step
             else:
                 dt = n_step - env.targets[itar]['sampling times'][-1]
             env.vehicles[index]['sample time diff'] = dt
@@ -193,6 +214,7 @@ def sample(vid,n_step):
             env.samples.append(s)
             print("\n%s: Sample taken at %s!" % (vid,tid))
             break
+    env.recalculate_nash = True
     return
     
 # Writes the result of simulation to csv
@@ -249,4 +271,57 @@ def out_pretty():
                 f.write(" %11s\n" % (veh['target nid']))
             continue
     print("Complete!")
+    return
+    
+# Set route of vehicles given target assignments
+# @param [[int],[float]] tA = [[target id][utility]]
+def set_route(tA):
+    cDest = tA[0] 
+    utilities = tA[1]
+    
+    # Use this info to route.
+    for x in range(env.nash_assigner.N):
+        print('Veh=%d Tar=%.0f Util=%.3f'%(x,cDest[x],utilities[x]))
+        
+        veh = env.vehicles_active[x]
+        path = dict()
+        
+        # Not worth the effort. Go home
+        if np.isnan(cDest[x]):
+            path['nids'] = nx.dijkstra_path(env.nx,veh['current edge']['to'],veh['destination node']['id'])
+            path['nids'].insert(0,veh['current edge']['from'])
+            path['weight'] , path['eids'] = nxops.path_info(env.nx,path['nids'])
+            
+        # Otherwise, go to the target
+        else:
+            # Path veh --> target
+            path_veh2tar = dict()
+            tar = env.target_nodes[int(cDest[x])]
+            path_veh2tar['nids'] = nx.dijkstra_path(env.nx,veh['current edge']['to'],tar['id'])
+            path_veh2tar['nids'].insert(0,veh['current edge']['from'])
+            path_veh2tar['weight'] , path_veh2tar['eids'] = nxops.path_info(env.nx,path_veh2tar['nids'])
+            
+            # path target --> dest
+            path_tar2dest = dict()
+            path_tar2dest['nids'] = nx.dijkstra_path(env.nx,tar['id'],veh['destination node']['id'])
+            path_tar2dest['weight'], path_tar2dest['eids'] = nxops.path_info(env.nx,path_tar2dest['nids'])
+            
+            # Combine together
+            path['nids'] = purr.flattenlist([path_veh2tar['nids'],path_tar2dest['nids']])
+            path['weight'] = path_veh2tar['weight'] + path_tar2dest['weight']
+            path['eids'] = purr.flattenlist([path_veh2tar['eids'],path_tar2dest['eids']])
+            
+            # Update vehicle tracking data
+            index = int(veh['id'][3:])
+            env.vehicles[index]['target nid'] = tar['id']
+            env.vehicles[index]['target eid'] = path['eids'][path['nids'].index(tar['id'])]
+            env.vehicles[index]['diversion path length'] = path['weight']
+            env.vehicles[index]['shortest path length'] = veh['veh2dest weight']
+        
+        # Route the vehicle with traci
+        try:
+            env.traci.vehicle.setRoute(veh['id'],path['eids'])
+        except env.traci.TraCIException:
+            pass
+        continue
     return

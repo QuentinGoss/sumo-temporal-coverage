@@ -53,9 +53,6 @@ nash_assigner = None     # Nash ASsigner Instance
 R = None
 tau = None
 
-# Baseline
-baseline_assign = False
-
 # traci object
 traci = None
 
@@ -65,5 +62,22 @@ spm_veh2tar = None
 
 # First update
 first_update = True
+
+# Points (Order is important)
+vPs = None # [dict] Vehicle src nodes
+vPd = None # [dict] Vehicle dst nodes
+tP = None  # [dict] Target nodes
+# N amount of valid src -> dst pairs are put here as generated during the validation test
+valid_points_file = "temp/valid-points.pybin"
+
+# Debugging
+debug = None # Bool - Makes testing quicker when true
+# Will write false to this file if unsucessful attempt.
+status_file = "temp/status.pybin"
+
+# Output files
+nA_greedy_file = "temp/nA-greedy.pybin"
+nA_smart_file = "temp/nA-smart.pybin"
+
 
 

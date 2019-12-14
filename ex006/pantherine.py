@@ -394,7 +394,10 @@ def deldir(_dir):
 def mrf(_dir,ext=r'*.*',lrf=False):
     _file = glob.glob(os.path.join(_dir,ext))
     _file.sort(key=os.path.getctime,reverse=lrf)
-    return _file[0]
+    try:
+        return _file[0]
+    except IndexError:
+        raise FileNotFoundError("FNF in %s" % _dir)
 
 # <!> NOT TESTED <!>
 # Attempts to cast a string to a float or an int 

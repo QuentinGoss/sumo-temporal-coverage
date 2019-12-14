@@ -8,7 +8,7 @@ import networkx as nx
 
 # The distances between the targets and each destination may be determined after destination nodes are chosen
 def generate_tar2dest():
-    print("Generating Tar -> Dest shortest path weights...",end='')
+    print("Generating Tar -> Dest shortest path weights...")
     tar_ids = [tar['id'] for tar in env.target_nodes]
     dest_ids = [veh['shortest path']['nids'][-1] for veh in env.vehicles]
     env.spm_tar2dest = generate(tar_ids,dest_ids)
@@ -21,6 +21,7 @@ def generate_tar2dest():
 # @return a dictionary with the short path matrix
 def generate(colnames,rownames):
     weights = []
+    n = 0; total = len(colnames) * len(rownames)
     for irow,rn in enumerate(rownames):
         row = []
         for icol,cn in enumerate(colnames):
@@ -28,6 +29,7 @@ def generate(colnames,rownames):
             if not cn == rn:
                 weight = nxops.path_info(env.nx,nx.dijkstra_path(env.nx,cn,rn))[0]
             row.append(weight)
+            n+=1;purr.update(n,total,"Generating SPM ")
             continue
         weights.append(row)
         continue
@@ -36,6 +38,7 @@ def generate(colnames,rownames):
         'rownames':rownames,
         'weights':weights
     }
+    print()
     return spm
 
 # Prints an SPM visually 

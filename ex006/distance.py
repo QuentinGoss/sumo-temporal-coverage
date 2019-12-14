@@ -22,7 +22,7 @@ class distance:
     #       When true, return distance between vehicle current poisition and target
     # @return float distance
     def travelTime(self,vehicle,target,source):
-        iveh = vehicle; itar = target
+        iveh = int(vehicle); itar = int(target)
             
         # Retrieve Vehicle and Target Data
         veh = env.vehicles_active[iveh]

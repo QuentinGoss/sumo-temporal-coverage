@@ -125,7 +125,7 @@ class nashAssigner:
 	
 	
 	#function takes in a given configuration and returns target assignments 
-	def getAssignments(self): 
+	def getAssignments(self,max_iter=25): 
 		#Returns: (targets, utilities)
 		#targets[x] is the target allocation for vehicle x. If no target is assigned to x, then targets[x] will be equal to np.nan		
 		#utilities[x] contains the utility of the vehicle x 
@@ -134,7 +134,7 @@ class nashAssigner:
 		while count:
 			count = 0
 			iteration = iteration + 1 
-			if iteration > 25: 
+			if iteration > max_iter: 
 				print('looks like an infinite loop, breaking')
 				break 
 			print('running iteration # %d'%iteration)

@@ -7,8 +7,8 @@ import target
 import nxops
 import spm
 import distance
-import nash
-import baseline
+import point
+import systematicSim2 as ss2
 
 ###############################
 # Initilize anything that needs to happen at step 0 here.
@@ -19,10 +19,10 @@ def initialize(traci):
     
     env.traci = traci
     preprocess.initialize_nx()
-    purr.pause()
-    # ~ preprocess.initialize_edges_for_spawns_and_sinks(traci)
-    # ~ target.initialize(traci)
+    preprocess.initialize_edges_and_nodes()
+    point.validate()
     vehicle.initialize()
+    target.initialize(traci)
     spm.generate_tar2dest()
     env.dist = distance.distance()
     
@@ -31,6 +31,15 @@ def initialize(traci):
         vehicle.add()
         n += 1; purr.update(n,total,msg="Adding first %d vehicles " % (env.veh_exists_max))
         continue
+    print()
+        
+    vehicle.update()
+    spm.update_veh2tar()
+    env.nash_assigner = ss2.nashAssigner(N=len(env.vPd),M=len(env.tP),R=env.R,tau=env.tau,dist=env.dist)
+    if env.method == "greedy":
+        vehicle.set_route(env.nash_assigner.greedyAssignments())
+    else:
+        vehicle.set_route(env.nash_assigner.getAssignments())
         
     # ~ env.update_vehicle_info = True
 
@@ -45,32 +54,17 @@ def initialize(traci):
 # Return False to finalize the simulation
 ###############################
 def timestep(traci,n_step):
+    
     # Take samples if neccesary
     for vid in traci.vehicle.getIDList():
         if vehicle.is_veh_at_target(vid):
             vehicle.sample(vid,n_step)
     
-    # We will wait until all vehicles spawn before assigning new routes. This may take 2-3 steps
-    if env.first_update and (traci.vehicle.getIDCount() == env.veh_exists_max):
-        env.first_update = False
-        env.baseline_assign = True
-        env.recalculate_nash = True
-        env.update_vehicle_info = True
-    
-    # Update vehicle info if needed
-    if (env.update_vehicle_info):
+    if env.method == "smart" and env.recalculate_nash:
+        env.recalculate_nash = False
         vehicle.update()
         spm.update_veh2tar()
-    
-    # Set baseline assignments
-    if env.method == 'baseline' and env.baseline_assign:
-        env.baseline_assign = False
-        baseline.assign()
-    
-    # Set Nash asignments
-    if env.method == 'nash' and env.recalculate_nash:
-        env.recalculate_nash = False
-        nash.get_assignments()
+        vehicle.set_route(env.nash_assigner.getAssignments())
     
     # End of Simulation condition
     if (traci.vehicle.getIDCount() <= 0) and (env.veh_id_counter >= (env.veh_total - 1)):
@@ -95,5 +89,10 @@ def finalize():
     vehicle.out_pretty()
     target.csv()
     target.out_pretty()
+    
+    if env.method == "greedy":
+        purr.save(env.nA_greedy_file,env.nash_assigner)
+    else:
+        purr.save(env.nA_smart_file,env.nash_assigner)
     return
 # End finalize

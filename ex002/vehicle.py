@@ -46,7 +46,6 @@ def initialize():
         veh['destination'] = veh['shortest path']['nids'][-1]
         veh['shortest path length'] = veh['shortest path']['weight']
         env.vehicles[i] = veh
-        purr.update(i+1,total,"Initializing Vehicles ")
     print()
     return
 

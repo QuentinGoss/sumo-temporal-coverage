@@ -10,7 +10,8 @@ import glob      # mrf
 import json      # save
 import xml.etree.ElementTree as ET # readXML
 from bisect import bisect_left     # binsearch
-import datetime
+import datetime  # now, elapsed
+import math      # tringle, rotate
 
 # Converts a string of characters into a unique number
 # @param string s = string of ASCII values
@@ -393,7 +394,10 @@ def deldir(_dir):
 def mrf(_dir,ext=r'*.*',lrf=False):
     _file = glob.glob(os.path.join(_dir,ext))
     _file.sort(key=os.path.getctime,reverse=lrf)
-    return _file[0]
+    try:
+        return _file[0]
+    except IndexError:
+        raise FileNotFoundError("FNF in %s" % _dir)
 
 # <!> NOT TESTED <!>
 # Attempts to cast a string to a float or an int 
@@ -465,3 +469,178 @@ def now():
 # @return float = Time elapsed between now and _time in seconds.
 def elapsed(_time):
     return (datetime.datetime.now() - _time).total_seconds()
+
+# Complete triangle information
+# @param float theta = angle (in degrees)
+# @param float hyp = Hypotenuse weight
+# @param float opp = Opposite weight
+# @param float adj = Adjacent weight5
+# @param (float, float) p0 = The (x,y) value of the hyp/adj point.
+# @param bool oflip = Reflect across Opposite
+# @param bool oflip = Reflect across Adjacent
+# @param bool oflip = Reflect across Hypotenuse
+# @param float rotation = degrees for p1 and p2 to be rotated
+#
+# y p2.___. p1
+# ^   |  /
+# |   | /   when flip = False
+# |   |/
+# |   * p0
+# +-----------> x
+#
+# @return a dict object containing triangle data
+def triangle(theta=None,hyp=None,opp=None,adj=None,p0=(0,0),hflip=False,oflip=False,aflip=False,rotation=0.0):
+    # Validate input
+    n = 0
+    for item in [theta,hyp,opp,adj]:
+        if not item == None:
+            n += 1
+    if n < 2:
+        raise ValueError("Not enough info to complete triangle.")
+    
+    if theta == None:
+        if hyp == None:
+            theta = math.atan(opp/adj)
+            hyp = adj / math.cos(theta)
+        else:
+            if opp == None:
+                theta = math.acos(adj/hyp)
+                opp = hyp * math.sin(theta)
+            else:
+                theta = math.asin(opp/hyp)
+                if adj == None:
+                    adj = hyp * math.cos(theta)
+    else:
+        theta = math.radians(theta)
+        if hyp == None:
+            if opp == None:
+                opp = adj * math.tan(theta)
+                hyp = adj / math.cos(theta)
+            else:
+                hyp = opp / math.sin(theta)
+                if adj == None:
+                    adj = opp / math.tan(theta)
+        else:
+            if opp == None:
+                opp = hyp * math.sin(theta)
+            if adj == None:
+                adj = hyp * math.cos(theta)
+    
+    # Determine p1 and p2
+    p1 = (p0[0] + opp,p0[1] + adj)
+    p2 = (p0[0],p1[1])
+    if oflip:
+        p0 = reflection(p0,p1,p2)
+    if aflip:
+        p1 = (p2[0]-opp,p1[1])
+    if hflip:
+        p2 = reflection(p2,p0,p1)
+    
+    if rotation > 0:
+        p1 = rotate(p1,rotation,p0)
+        p2 = rotate(p2,rotation,p0)
+    
+    tr = {
+        'theta':math.degrees(theta),
+        'hyp':hyp,
+        'opp':opp,
+        'adj':adj,
+        'p0':p0,
+        'p1':p1,
+        'p2':p2,
+        'rotation':rotation
+    }
+    return tr
+
+# Rotate a point by theta degrees
+# @param (float,float) p = (x,y) point
+# @param float theta = degrees to rotate
+# @param (x,y) origin = Point to be rotated around
+# @return rotated x,y point
+# Credit: https://gist.github.com/LyleScott/e36e08bfb23b1f87af68c9051f985302
+def rotate(p,theta,origin=(0,0)):
+    radians = math.radians(theta)
+    x, y = p
+    offset_x, offset_y = origin
+    adjusted_x = (x - offset_x)
+    adjusted_y = (y - offset_y)
+    cos_rad = math.cos(radians)
+    sin_rad = math.sin(radians)
+    qx = offset_x + cos_rad * adjusted_x + sin_rad * adjusted_y
+    qy = offset_y + -sin_rad * adjusted_x + cos_rad * adjusted_y
+    return (qx,qy)
+
+# Reflect a point across a 2d line, given a point to reflect and 
+# @param (float,float) pr = (x,y) point to reflect
+# @param (float,float) p0 = (x,y) point line start
+# @param (float,float) p1 = (x,y) point of line end
+# @return reflected point
+def reflection(pr,p0,p1):
+    x,y = pr
+    x0,y0 = p0
+    x1,y1 = p1
+    dy = y1-y0
+    dx = x1-x0
+    
+    # Vertical
+    if dy == 0:
+        return(0-x,y)
+        
+    # Horizontal
+    elif dx == 0:
+        return(x,0-y)
+    
+    # Linear
+    m = dy/dx
+    b = y1 - (m*x1)
+    u = ((1-math.pow(m,2))*x + 2*m*y - 2*m*b)/(math.pow(m,2)+1)
+    v = ((math.pow(m,2)-1)*y + 2*m*x + 2*b)/(math.pow(m,2)+1)
+    return (u,v)
+
+#Checks if a point is inside a polygon
+# @param float x = x coord
+# @param float y = y coord
+# @param [(x,y),...] poly = Shape as a list of (x,y) coords
+# @param bool include_edges = Consider edges as inside when true.
+# @return bool = if point is inside polygon
+# source https://stackoverflow.com/questions/39660851/deciding-if-a-point-is-inside-a-polygon-python
+def point_inside_polygon(x, y, poly, include_edges=True):
+    '''
+    Test if point (x,y) is inside polygon poly.
+
+    poly is N-vertices polygon defined as 
+    [(x1,y1),...,(xN,yN)] or [(x1,y1),...,(xN,yN),(x1,y1)]
+    (function works fine in both cases)
+
+    Geometrical idea: point is inside polygon if horisontal beam
+    to the right from point crosses polygon even number of times. 
+    Works fine for non-convex polygons.
+    '''
+    n = len(poly)
+    inside = False
+
+    p1x, p1y = poly[0]
+    for i in range(1, n + 1):
+        p2x, p2y = poly[i % n]
+        if p1y == p2y:
+            if y == p1y:
+                if min(p1x, p2x) <= x <= max(p1x, p2x):
+                    # point is on horisontal edge
+                    inside = include_edges
+                    break
+                elif x < min(p1x, p2x):  # point is to the left from current edge
+                    inside = not inside
+        else:  # p1y!= p2y
+            if min(p1y, p2y) <= y <= max(p1y, p2y):
+                xinters = (y - p1y) * (p2x - p1x) / float(p2y - p1y) + p1x
+
+                if x == xinters:  # point is right on the edge
+                    inside = include_edges
+                    break
+
+                if x < xinters:  # point is to the left from current edge
+                    inside = not inside
+
+        p1x, p1y = p2x, p2y
+
+    return inside

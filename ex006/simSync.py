@@ -53,7 +53,7 @@ class SimulationSychronizer(object):
             self.vPs_nodes = []
             self.vPd_nodes = []
             for i, node in enumerate(vP_nodes):
-                vP_nodes[i]['index'] = i
+                node['index'] = i
                 if i % 2 == 0:
                     self.vPs_nodes.append(node)
                 else:
@@ -97,7 +97,7 @@ class SimulationSychronizer(object):
         purr.save(self.points_pybin,(self.vPs_nodes,self.vPd_nodes,self.tP_nodes))
         for method in ("greedy","smart"):
             cmd = "python runner.py "
-            cmd += "--nogui "
+            # ~ cmd += "--nogui "
             cmd += "--map-dir=%s " % (self.map_dir)
             cmd += "--veh.total=%d " % (self.N)
             cmd += "--veh.exists.max=%d " % (self.N)
@@ -225,8 +225,8 @@ class SimulationSychronizer(object):
 
 def run():
     map_dir = "../london-seg4/data/"
-    N = 5 #100 # Vehicles
-    M = 5 #25  # Targets
+    N = 100 #100 # Vehicles
+    M = 25 #25  # Targets
     tau = 1 
     R = 500   # Rewards
     
